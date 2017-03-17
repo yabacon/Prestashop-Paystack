@@ -15,14 +15,12 @@ class PrestaPaystackConfirmModuleFrontcontroller extends ModuleFrontController{
       }else{
         $key = $live_secretkey;
       }
+      $key = str_replace(' ', '', $key);
+
       $contextOptions = array(
-          'ssl' => array(
-              'verify_peer' => true,
-              'ciphers' => 'HIGH:!SSLv2:!SSLv3',
-          ),
           'http'=>array(
      		    'method'=>"GET",
-            'header'=> array("Authorization: Bearer ".$key."\r\n","Connection: close\r\n","User-Agent: test\r\n)")
+            'header'=> array("Authorization: Bearer ".$key."\r\n")
      		  )
       );
 
@@ -30,40 +28,54 @@ class PrestaPaystackConfirmModuleFrontcontroller extends ModuleFrontController{
       $url = 'https://api.paystack.co/transaction/verify/'.$code;
       $request = Tools::file_get_contents($url, false, $context);
       $result = Tools::jsonDecode($request);
-      // $result = json_decode('{
-      //     "status": true,
-      //     "message": "Verification successful",
-      //     "data": {
-      //       "amount": 168054,
-      //       "transaction_date": "2016-08-19T14:16:44.000Z",
-      //       "status": "success",
-      //       "reference": "'.$code.'",
-      //       "domain": "test",
-      //       "authorization": {
-      //         "authorization_code": "AUTH_2mnfo76b",
-      //         "card_type": "visa",
-      //         "last4": "1381",
-      //         "exp_month": "01",
-      //         "exp_year": "2020",
-      //         "bank": "TEST BANK",
-      //         "channel": "card",
-      //         "reusable": true
-      //       },
-      //       "customer": {
-      //         "first_name": "",
-      //         "last_name": "",
-      //         "email": "kendyson@kendyson.com"
-      //       },
-      //       "plan": null
-      //     }
-      //   }');
-
-      // $result = json_decode('{
-      //     "status": false,
-      //     "message": "Invalid transaction reference"
-      //   }');
       return $result;
     }
+    // public function verify_txn($code){
+    //   $test_secretkey = Configuration::get('PAYSTACK_TEST_SECRETKEY');
+    //   $live_secretkey = Configuration::get('PAYSTACK_LIVE_SECRETKEY');
+    //   $mode = Configuration::get('PAYSTACK_MODE');
+
+    //   if ($mode == 'test') {
+    //     $key = $test_secretkey;
+    //   }else{
+    //     $key = $live_secretkey;
+    //   }
+    //   $key = str_replace(' ', '', $key);
+  
+    //     $url = 'https://api.paystack.co/transaction/verify/' . urlencode($code);
+    //     $data = array();
+        
+      
+    //     //open connection
+    //     $ch = curl_init();
+
+    //     //set the url, and the header
+    //     curl_setopt($ch, CURLOPT_URL, $url);
+    //     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+    //     // Paystack's servers require TLSv1.2
+    //     // Force CURL to use this
+    //     if (!defined('CURL_SSLVERSION_TLSV1_2')) {
+    //         define('CURL_SSLVERSION_TLSV1_2', 6);
+    //     }
+    //     curl_setopt($ch, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSV1_2);
+
+    //     curl_setopt(
+    //         $ch, CURLOPT_HTTPHEADER, [
+    //         'Authorization: Bearer ' . $key]
+    //     );
+
+    //     //execute post
+    //     $result = curl_exec($ch);
+
+    //     //close connection
+    //     curl_close($ch);
+
+    //     if ($result) {
+    //         $data = Tools::jsonDecode($result);
+    //     }
+    //   return $data;
+    // }
   	public function initParams(){
       $params = [];
       $transaction = array();
@@ -72,6 +84,9 @@ class PrestaPaystackConfirmModuleFrontcontroller extends ModuleFrontController{
 
   		if($nbProducts  > 0 && Tools::getValue('txn_code') !== ''){
         $txn_code = Tools::getValue('txn_code');
+        if(Tools::getValue('txn_code') == ""){
+          $txn_code = $_POST['paystack-trxref'];
+        }
         $amount = Tools::getValue('amounttotal');
         $email = Tools::getValue('email');
         $verification = $this->verify_txn($txn_code);
